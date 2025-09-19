@@ -1,32 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity  } from 'react-native';
+import * as Font from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 import { supabase } from './app/lib/supabase';
+
+// Keep splash screen visible while loading
+SplashScreen.preventAutoHideAsync();
 
 // Import your screens
 import Welcome from './app/screens/Welcome';
+import Auth from './app/screens/Auth';
 
 // Placeholder screens for now
 const DashboardScreen = () => (
   <View style={styles.placeholder}>
-    <Text style={styles.placeholderText}>Dashboard Screen</Text>
-    <Text>Your calendar view will go here</Text>
+    <Text style={[styles.placeholderText, { fontFamily: 'Montserrat-Bold' }]}>Dashboard Screen</Text>
+    <Text style={{ fontFamily: 'Montserrat-Regular' }}>Your calendar view will go here</Text>
   </View>
 );
 
-const ProfileScreen = () => (
-  <View style={styles.placeholder}>
-    <Text style={styles.placeholderText}>Profile Screen</Text>
-    <Text>Your profile will go here</Text>
-  </View>
-);
+const ProfileScreen = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  return (
+    <View style={styles.placeholder}>
+      <Text style={[styles.placeholderText, { fontFamily: 'Montserrat-Bold' }]}>Profile Screen</Text>
+      <Text style={{ fontFamily: 'Montserrat-Regular' }}>Your profile will go here</Text>
+      
+      <TouchableOpacity 
+        style={{ backgroundColor: '#FF5555', padding: 10, marginTop: 20, borderRadius: 8 }}
+        onPress={handleLogout}
+      >
+        <Text style={{ color: 'white', fontFamily: 'Montserrat-Medium' }}>Logout</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const WeekendersScreen = () => (
   <View style={styles.placeholder}>
-    <Text style={styles.placeholderText}>Weekenders Screen</Text>
-    <Text>Social feed will go here</Text>
+    <Text style={[styles.placeholderText, { fontFamily: 'Montserrat-Bold' }]}>Weekenders Screen</Text>
+    <Text style={{ fontFamily: 'Montserrat-Regular' }}>Social feed will go here</Text>
   </View>
 );
 
@@ -41,6 +60,7 @@ function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: '#8E8E93',
+        tabBarLabelStyle: { fontFamily: 'Montserrat-Medium' },
       }}
     >
       <Tab.Screen 
@@ -65,15 +85,36 @@ function MainTabs() {
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
 
+  // Load fonts first
   useEffect(() => {
-    // Get initial session
+    async function loadFonts() {
+      try {
+        console.log('Starting to load fonts...');
+        await Font.loadAsync({
+          'Montserrat-Regular': require('./assets/fonts/Montserrat-Regular.ttf'),
+          'Montserrat-Medium': require('./assets/fonts/Montserrat-Medium.ttf'),
+          'Montserrat-SemiBold': require('./assets/fonts/Montserrat-SemiBold.ttf'),
+          'Montserrat-Bold': require('./assets/fonts/Montserrat-Bold.ttf'),
+        });
+        console.log('Fonts loaded successfully!');
+        setFontsLoaded(true);
+      } catch (error) {
+        console.error('Error loading fonts:', error);
+        setFontsLoaded(true); // Continue even if fonts fail
+      }
+    }
+    loadFonts();
+  }, []);
+
+  // Load session
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
@@ -81,13 +122,16 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
+  // Hide splash screen when everything is ready
+  useEffect(() => {
+    if (fontsLoaded && !loading) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, loading]);
+
+  // Show loading while fonts or session are loading
+  if (!fontsLoaded || loading) {
+    return null; // Keep splash screen visible
   }
 
   return (
@@ -96,7 +140,8 @@ export default function App() {
         {!session ? (
           // Not logged in - show public screens starting with Welcome
           <>
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Welcome" component={Welcome} />
+            <Stack.Screen name="Auth" component={Auth} />
           </>
         ) : (
           // Logged in - show main app
@@ -118,6 +163,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#666666',
+    fontFamily: 'Montserrat-Regular',
   },
   placeholder: {
     flex: 1,

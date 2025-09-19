@@ -19,7 +19,7 @@ export default function WelcomeScreen({ navigation }) {
     <View style={styles.container}>
       {/* Background Image */}
       <ImageBackground
-        source={{ uri: '/app-welcome-bg.png' }}
+        source={require('../../assets/images/app-welcome-bg.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
@@ -87,14 +87,14 @@ const styles = StyleSheet.create({
   },
   getStartedButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: 'medium',
     fontSize: 16,
   },
   getStartedButton: {
     // Custom styling for the button
-    backgroundColor: 'rgba(0, 122, 255, 0.9)', // primary/90
+    backgroundColor: 'rgba(255, 85, 85, 1)', // primary/90
     borderWidth: 1,
-    borderColor: 'rgba(0, 122, 255, 0.2)', // primary/20
+    borderColor: 'rgba(127, 29, 29, 1)', // primary/20
     paddingHorizontal: 32, // px-8
     paddingVertical: 12, // py-3
     borderRadius: 25, // rounded-full

@@ -16,6 +16,7 @@ export default ({ config }) => ({
     env: process.env.EXPO_PUBLIC_ENV ?? "dev"
   },
   plugins: [
+    "expo-font",
     "expo-notifications",
     ["expo-build-properties", { ios: { useFrameworks: "static" } }]
   ]
